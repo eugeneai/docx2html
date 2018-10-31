@@ -1,7 +1,7 @@
 from docx2html.core import convert
 
 __all__ = [
-    convert.func_name,
+    convert
 ]
 
 # Edit here and setup.py

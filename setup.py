@@ -35,7 +35,7 @@ setup(
     packages=find_packages(),
     scripts=[],
     zip_safe=False,
-    install_requires=['lxml==2.2.4', 'pillow==1.7.7'],
+    install_requires=['lxml', 'pillow'],
     cmdclass={},
     classifiers=[
         "Development Status :: 3 - Alpha",
