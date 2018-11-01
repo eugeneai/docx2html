@@ -924,7 +924,7 @@ def build_list(li_nodes, meta_data):
 
     # Store the first list created (the root list) for the return value.
     root_ol = None
-    visited_nodes = []
+    visited_nodes = set()
     list_contents = []
 
     def _build_li(list_contents):
@@ -968,7 +968,7 @@ def build_list(li_nodes, meta_data):
                 meta_data,
             )
             list_contents.append(new_el)
-            visited_nodes.extend(el_visited_nodes)
+            visited_nodes.update(el_visited_nodes)
             continue
         if list_contents:
             li_el = _build_li(list_contents)
@@ -1028,7 +1028,7 @@ def build_list(li_nodes, meta_data):
                 current_ol = create_list(list_type)
 
         # Create the li element.
-        visited_nodes.extend(list(li_node.iter()))
+        visited_nodes.update(list(li_node.iter()))
 
     # If a list item is the last thing in a document, then you will need to add
     # it here. Should probably figure out how to get the above logic to deal
@@ -1058,11 +1058,11 @@ def build_tr(tr, meta_data, row_spans):
     # Create a blank tr element.
     tr_el = etree.Element('tr')
     w_namespace = get_namespace(tr, 'w')
-    visited_nodes = []
+    visited_nodes = set()
     for el in tr:
         if el in visited_nodes:
             continue
-        visited_nodes.append(el)
+        visited_nodes.add(el)
         # Find the table cells.
         if el.tag == '%stc' % w_namespace:
             v_merge = get_v_merge(el)
@@ -1093,18 +1093,18 @@ def build_tr(tr, meta_data, row_spans):
                         li_nodes,
                         meta_data,
                     )
-                    visited_nodes.extend(list_visited_nodes)
+                    visited_nodes.update(list_visited_nodes)
                     texts.append(etree.tostring(list_el, encoding=str))
                 elif td_content.tag == '%stbl' % w_namespace:
                     table_el, table_visited_nodes = build_table(
                         td_content,
                         meta_data,
                     )
-                    visited_nodes.extend(table_visited_nodes)
+                    visited_nodes.update(table_visited_nodes)
                     texts.append(etree.tostring(table_el, encoding=str))
                 elif td_content.tag == '%stcPr' % w_namespace:
                     # Do nothing
-                    visited_nodes.append(td_content)
+                    visited_nodes.add(td_content)
                     continue
                 else:
                     text = get_element_content(
@@ -1157,7 +1157,7 @@ def build_table(table, meta_data):
             # And append it to the table.
             table_el.append(tr_el)
 
-    visited_nodes = list(table.iter())
+    visited_nodes = set(table.iter())
     return table_el, visited_nodes
 
 
@@ -1413,7 +1413,7 @@ def create_html(tree, meta_data):
     new_html = etree.Element('html')
 
     w_namespace = get_namespace(tree, 'w')
-    visited_nodes = []
+    visited_nodes = set()
 
     _strip_tag(tree, '%ssectPr' % w_namespace)
     for el in tree.iter():
@@ -1445,7 +1445,7 @@ def create_html(tree, meta_data):
                     li_nodes,
                     meta_data,
                 )
-                visited_nodes.extend(list_visited_nodes)
+                visited_nodes.update(list_visited_nodes)
             # Handle generic p tag here.
             else:
                 p_text = get_element_content(el, meta_data)
@@ -1461,12 +1461,12 @@ def create_html(tree, meta_data):
                 el,
                 meta_data,
             )
-            visited_nodes.extend(table_visited_nodes)
+            visited_nodes.update(table_visited_nodes)
             new_html.append(table_el)
             continue
 
         # Keep track of visited_nodes
-        visited_nodes.append(el)
+        visited_nodes.add(el)
     result = etree.tostring(
         new_html,
         method='html',
