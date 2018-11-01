@@ -1305,9 +1305,16 @@ def get_element_content(
         '%shyperlink' % w_namespace,
         '%sins' % w_namespace,
         '%ssmartTag' % w_namespace,
-        '%sjc' % w_namespace
     )
-    current_style = 'right'
+    current_style = 'left'
+    styleel = p.xpath(
+        ".//w:jc",
+        namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"})
+    if styleel:
+        # Changes in styles
+        current_style = styleel[-1].get(
+            '{}val'.format(w_namespace), current_style)
+
     elements_with_content = []
     for child in p:
         if child is None:
@@ -1474,7 +1481,7 @@ def create_html(tree, meta_data, as_tree=False, charset_metadata=False):
                     continue
 
                 align_str = ''
-                if current_style != 'right':
+                if current_style != 'left':
                     align_str = ' align="{}"'.format(current_style)
 
                 new_el = etree.XML('<p%s>%s</p>' %
