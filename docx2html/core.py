@@ -1361,7 +1361,7 @@ def read_html_file(file_path):
     return html
 
 
-def convert(file_path, image_handler=None, fall_back=None, converter=None):
+def convert(file_path, image_handler=None, fall_back=None, converter=None, as_tree=False, charset_metadata=False):
     """
     ``file_path`` is a path to the file on the file system that you want to be
         converted to html.
@@ -1372,6 +1372,8 @@ def convert(file_path, image_handler=None, fall_back=None, converter=None):
         only be called if for whatever reason the conversion fails.
     ``converter`` is a function to convert a document that is not docx to docx
         (examples in docx2html.converters)
+    ``as_tree`` if True the etree XML tree returned as the result
+    ``charset_metadata`` if True <title><meta .... charset /></title> added.
 
     Returns html extracted from ``file_path``
     """
@@ -1404,13 +1406,20 @@ def convert(file_path, image_handler=None, fall_back=None, converter=None):
 
     # Need to populate the xml based on word/document.xml
     tree, meta_data = _get_document_data(zf, image_handler)
-    return create_html(tree, meta_data)
+    return create_html(tree, meta_data,
+                       as_tree=as_tree,
+                       charset_metadata=charset_metadata)
 
 
-def create_html(tree, meta_data):
+def create_html(tree, meta_data, as_tree=False, charset_metadata=False):
 
     # Start the return value
     new_html = etree.Element('html')
+    if charset_metadata:
+        _title = etree.SubElement(new_html, 'title')
+        _meta = etree.SubElement(_title, 'meta',
+                                 attrib={"http-equiv": "content-type",
+                                         'content': "text/html; charset=UTF-8"})
 
     w_namespace = get_namespace(tree, 'w')
     visited_nodes = set()
@@ -1477,12 +1486,15 @@ def create_html(tree, meta_data):
 
         # Keep track of visited_nodes
         visited_nodes.add(el)
-    result = etree.tostring(
-        new_html,
-        method='html',
-        with_tail=True,
-        encoding=str
-    )
+    if as_tree:
+        return new_html
+    else:
+        result = etree.tostring(
+            new_html,
+            method='html',
+            with_tail=True,
+            encoding=str
+        )
     return _make_void_elements_self_close(result)
 
 
