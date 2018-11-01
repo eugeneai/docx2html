@@ -1060,6 +1060,7 @@ def build_tr(tr, meta_data, row_spans):
     w_namespace = get_namespace(tr, 'w')
     visited_nodes = set()
     for el in tr:
+        current_style = 'left'
         if el in visited_nodes:
             continue
         visited_nodes.add(el)
@@ -1107,15 +1108,19 @@ def build_tr(tr, meta_data, row_spans):
                     visited_nodes.add(td_content)
                     continue
                 else:
-                    text = get_element_content(
+                    text, current_style = get_element_content(
                         td_content,
                         meta_data,
                         is_td=True,
+                        style=True
                     )
                     texts.append(text)
 
             data = '<br />'.join(t for t in texts if t is not None)
-            td_el = etree.XML('<td>%s</td>' % data)
+            align = ''
+            if current_style != 'left':
+                align = ' align="{}"'.format(current_style)
+            td_el = etree.XML('<td%s>%s</td>' % (align, data))
             # if there is a colspan then set it here.
             colspan = get_grid_span(el)
             if colspan > 1:
@@ -1296,8 +1301,7 @@ def get_element_content(
 
     p_text = ''
     w_namespace = get_namespace(p, 'w')
-    if len(p) == 0:
-        return ''
+
     # Only these tags contain text that we care about (eg. We don't care about
     # delete tags)
     content_tags = (
@@ -1345,7 +1349,6 @@ def get_element_content(
         elif el.tag == '%sjc' % w_namespace:
             # Changes in representing
             current_style = el.get('{}val'.format(w_namespace), current_style)
-            print('Style:{}'.format(current_style))
         else:
             raise SyntaxNotSupported(
                 'Content element "%s" not handled.' % el.tag
@@ -1378,7 +1381,9 @@ def read_html_file(file_path):
     return html
 
 
-def convert(file_path, image_handler=None, fall_back=None, converter=None, as_tree=False, charset_metadata=False):
+def convert(file_path, image_handler=None, fall_back=None,
+            converter=None, as_tree=False,
+            charset_metadata=False, pretty_print=False):
     """
     ``file_path`` is a path to the file on the file system that you want to be
         converted to html.
@@ -1425,10 +1430,14 @@ def convert(file_path, image_handler=None, fall_back=None, converter=None, as_tr
     tree, meta_data = _get_document_data(zf, image_handler)
     return create_html(tree, meta_data,
                        as_tree=as_tree,
-                       charset_metadata=charset_metadata)
+                       charset_metadata=charset_metadata,
+                       pretty_print=pretty_print)
 
 
-def create_html(tree, meta_data, as_tree=False, charset_metadata=False):
+def create_html(tree, meta_data,
+                as_tree=False,
+                charset_metadata=False,
+                pretty_print=False):
 
     # Start the return value
     new_html = etree.Element('html')
@@ -1506,7 +1515,8 @@ def create_html(tree, meta_data, as_tree=False, charset_metadata=False):
             new_html,
             method='html',
             with_tail=True,
-            encoding=str
+            encoding=str,
+            pretty_print=pretty_print
         )
     return _make_void_elements_self_close(result)
 

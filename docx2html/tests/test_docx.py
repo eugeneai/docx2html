@@ -178,11 +178,11 @@ def test_table_col_row_span():
           <td>DDD</td>
         </tr>
         <tr>
-          <td>EEE</td>
+          <td align="right">EEE</td>
           <td rowspan="2">FFF</td>
         </tr>
         <tr>
-          <td>GGG</td>
+          <td align="right">GGG</td>
         </tr>
       </table>
       <table>
