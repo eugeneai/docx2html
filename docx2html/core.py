@@ -1276,6 +1276,7 @@ def get_element_content(
         is_td=False,
         remove_italics=False,
         remove_bold=False,
+        style=False
 ):
     """
     P tags are made up of several runs (r tags) of text. This function takes a
@@ -1304,7 +1305,9 @@ def get_element_content(
         '%shyperlink' % w_namespace,
         '%sins' % w_namespace,
         '%ssmartTag' % w_namespace,
+        '%sjc' % w_namespace
     )
+    current_style = 'right'
     elements_with_content = []
     for child in p:
         if child is None:
@@ -1332,6 +1335,10 @@ def get_element_content(
                 remove_bold=remove_bold,
                 remove_italics=remove_italics,
             )
+        elif el.tag == '%sjc' % w_namespace:
+            # Changes in representing
+            current_style = el.get('{}val'.format(w_namespace), current_style)
+            print('Style:{}'.format(current_style))
         else:
             raise SyntaxNotSupported(
                 'Content element "%s" not handled.' % el.tag
@@ -1339,7 +1346,10 @@ def get_element_content(
 
     # This function does not return a p tag since other tag types need this as
     # well (td, li).
-    return p_text
+    if style:
+        return p_text, current_style
+    else:
+        return p_text
 
 
 def _strip_tag(tree, tag):
@@ -1423,7 +1433,6 @@ def create_html(tree, meta_data, as_tree=False, charset_metadata=False):
 
     w_namespace = get_namespace(tree, 'w')
     visited_nodes = set()
-    current_style = 'right'
 
     _strip_tag(tree, '%ssectPr' % w_namespace)
     for el in tree.iter():
@@ -1444,10 +1453,6 @@ def create_html(tree, meta_data, as_tree=False, charset_metadata=False):
                     header_value,
                 ))
             )
-        elif el.tag == '%sjc' % w_namespace:
-            # Changes in representing
-            current_style = el.get('{}val'.format(w_namespace), current_style)
-
         elif el.tag == '%sp' % w_namespace:
             # Strip out titles.
             if is_title(el):
@@ -1462,7 +1467,8 @@ def create_html(tree, meta_data, as_tree=False, charset_metadata=False):
                 visited_nodes.update(list_visited_nodes)
             # Handle generic p tag here.
             else:
-                p_text = get_element_content(el, meta_data)
+                p_text, current_style = get_element_content(
+                    el, meta_data, style=True)
                 # If there is not text do not add an empty tag.
                 if p_text == '':
                     continue

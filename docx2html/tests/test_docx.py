@@ -692,7 +692,7 @@ def test_has_title():
         'has_title.docx',
     )
     actual_html = convert(file_path)
-    assert_html_equal(actual_html, '''<html><p align="left">Text</p></html>''')
+    assert_html_equal(actual_html, '''<html><p>Text</p></html>''')
 
 
 def test_upper_alpha_all_bold():
