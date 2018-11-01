@@ -1414,6 +1414,7 @@ def create_html(tree, meta_data):
 
     w_namespace = get_namespace(tree, 'w')
     visited_nodes = set()
+    current_style = 'right'
 
     _strip_tag(tree, '%ssectPr' % w_namespace)
     for el in tree.iter():
@@ -1423,7 +1424,7 @@ def create_html(tree, meta_data):
         if el in visited_nodes:
             continue
         header_value = is_header(el, meta_data)
-        if is_header(el, meta_data):
+        if header_value:
             p_text = get_element_content(el, meta_data)
             if p_text == '':
                 continue
@@ -1434,6 +1435,10 @@ def create_html(tree, meta_data):
                     header_value,
                 ))
             )
+        elif el.tag == '%sjc' % w_namespace:
+            # Changes in representing
+            current_style = el.get('{}val'.format(w_namespace), current_style)
+
         elif el.tag == '%sp' % w_namespace:
             # Strip out titles.
             if is_title(el):
@@ -1453,7 +1458,12 @@ def create_html(tree, meta_data):
                 if p_text == '':
                     continue
 
-                new_el = etree.XML('<p>%s</p>' % p_text)
+                align_str = ''
+                if current_style != 'right':
+                    align_str = ' align="{}"'.format(current_style)
+
+                new_el = etree.XML('<p%s>%s</p>' %
+                                   (align_str, p_text))
             new_html.append(new_el)
 
         elif el.tag == '%stbl' % w_namespace:
