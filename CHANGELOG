@@ -1,7 +1,10 @@
 
 Changelog
 =========
-
+* 0.2.4
+    * Added support of text justification by means of 'style' attributes.
+      The feature is not switched on by default, and is controlled by
+      additional parameters of 'convert' function.
 * 0.2.3
     * There was a bug with hyperlinks that had a break tag in them. The
       document would fail to convert. This issue has been fixed.
