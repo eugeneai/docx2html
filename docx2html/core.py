@@ -1049,6 +1049,13 @@ def build_list(li_nodes, meta_data):
     return root_ol, visited_nodes
 
 
+def align_style(style):
+    if style != 'left':
+        return ' style="text-align:{};text-indent: 0em;"'.format(style)
+    else:
+        return ''
+
+
 @ensure_tag(['tr'])
 def build_tr(tr, meta_data, row_spans):
     """
@@ -1117,9 +1124,8 @@ def build_tr(tr, meta_data, row_spans):
                     texts.append(text)
 
             data = '<br />'.join(t for t in texts if t is not None)
-            align = ''
-            if current_style != 'left':
-                align = ' align="{}"'.format(current_style)
+            align = align_style(current_style)
+
             td_el = etree.XML('<td%s>%s</td>' % (align, data))
             # if there is a colspan then set it here.
             colspan = get_grid_span(el)
@@ -1382,8 +1388,7 @@ def read_html_file(file_path):
 
 
 def convert(file_path, image_handler=None, fall_back=None,
-            converter=None, as_tree=False,
-            charset_metadata=False, pretty_print=False):
+            converter=None, **kwargs):
     """
     ``file_path`` is a path to the file on the file system that you want to be
         converted to html.
@@ -1429,15 +1434,14 @@ def convert(file_path, image_handler=None, fall_back=None,
     # Need to populate the xml based on word/document.xml
     tree, meta_data = _get_document_data(zf, image_handler)
     return create_html(tree, meta_data,
-                       as_tree=as_tree,
-                       charset_metadata=charset_metadata,
-                       pretty_print=pretty_print)
+                       **kwargs)
 
 
 def create_html(tree, meta_data,
                 as_tree=False,
                 charset_metadata=False,
-                pretty_print=False):
+                pretty_print=False,
+                body=False):
 
     # Start the return value
     new_html = etree.Element('html')
@@ -1446,6 +1450,10 @@ def create_html(tree, meta_data,
         _meta = etree.SubElement(_title, 'meta',
                                  attrib={"http-equiv": "content-type",
                                          'content': "text/html; charset=UTF-8"})
+    if body:
+        tag_html = body_html = etree.SubElement(new_html, 'body')
+    else:
+        tag_html = new_html
 
     w_namespace = get_namespace(tree, 'w')
     visited_nodes = set()
@@ -1462,7 +1470,7 @@ def create_html(tree, meta_data,
             p_text = get_element_content(el, meta_data)
             if p_text == '':
                 continue
-            new_html.append(
+            tag_html.append(
                 etree.XML('<%s>%s</%s>' % (
                     header_value,
                     p_text,
@@ -1489,13 +1497,11 @@ def create_html(tree, meta_data,
                 if p_text == '':
                     continue
 
-                align_str = ''
-                if current_style != 'left':
-                    align_str = ' align="{}"'.format(current_style)
+                align_str = align_style(current_style)
 
                 new_el = etree.XML('<p%s>%s</p>' %
                                    (align_str, p_text))
-            new_html.append(new_el)
+            tag_html.append(new_el)
 
         elif el.tag == '%stbl' % w_namespace:
             table_el, table_visited_nodes = build_table(
@@ -1503,7 +1509,7 @@ def create_html(tree, meta_data,
                 meta_data,
             )
             visited_nodes.update(table_visited_nodes)
-            new_html.append(table_el)
+            tag_html.append(table_el)
             continue
 
         # Keep track of visited_nodes
